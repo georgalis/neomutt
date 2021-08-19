@@ -350,6 +350,39 @@ static int start_curses(void)
     mutt_error(_("Error initializing terminal"));
     return 1;
   }
+
+#if 0
+  start_color();
+  use_default_colors();
+
+  init_pair(1, 207, -1);
+  init_pair(2, -1, -1);
+  init_pair(3, 0, 0);
+  init_pair(4, -1, 96);
+
+  move(5, 5); bkgdset(COLOR_PAIR(1) | A_UNDERLINE | ' '); addstr("hello 1 world");
+  move(6, 5); bkgdset(COLOR_PAIR(2) | A_UNDERLINE | ' '); addstr("hello 2 world");
+  move(7, 5); bkgdset(COLOR_PAIR(0) | A_UNDERLINE | ' '); addstr("hello 0 world");
+  move(8, 5); bkgdset(COLOR_PAIR(3) | A_UNDERLINE | ' '); addstr("hello 3 world");
+  move(9, 5); bkgdset(COLOR_PAIR(4) | A_UNDERLINE | ' '); addstr("hello 4 world");
+
+  init_pair(5, 207, 0);
+  init_pair(6, 9, 0);
+  init_pair(7, 0, 96);
+
+  move(11, 5); bkgdset(COLOR_PAIR(5) | A_BOLD | ' '); addstr("hello 5 world");
+  move(12, 5); bkgdset(COLOR_PAIR(6) | A_BOLD | ' '); addstr("hello 6 world");
+  move(13, 5); bkgdset(COLOR_PAIR(7) | A_BOLD | ' '); addstr("hello 7 world");
+
+  move(23, 0);
+  refresh();
+  mutt_any_key_to_continue("press any key...");
+  erase();
+  refresh();
+
+  endwin();
+  exit(1);
+#endif
   mutt_signal_init();
   mutt_colors_init();
   keypad(stdscr, true);
@@ -936,10 +969,38 @@ main
     mutt_buffer_pool_release(&fpath);
   }
 
-  if (batch_mode)
+#if 0
+  int cols[] = {
+    MT_COLOR_INDICATOR, MT_COLOR_SEARCH, MT_COLOR_SIGNATURE,
+    MT_COLOR_STATUS,    MT_COLOR_TREE,   0,
+  };
+
+  struct AttrColor *ac = simple_color_get(MT_COLOR_NORMAL);
+  mutt_curses_set_color(ac);
+  mutt_refresh();
+
+  for (int j = 0; cols[j] > 0; j++)
+  {
+    mutt_window_move(RootWindow, 0, j + 5);
+    ac = simple_color_get(cols[j]);
+    const char *name = mutt_map_get_name(cols[j], ColorFields);
+    mutt_curses_set_color(ac);
+    // attrset(COLOR_PAIR(ac->curses_color->index) | ac->attrs);
+    mutt_window_printf(RootWindow, "%3d %s (%d)", ac->curses_color->index, name, cols[j]);
+  }
+  ac = simple_color_get(MT_COLOR_NORMAL);
+  mutt_curses_set_color(ac);
+  mutt_window_move(RootWindow, 0, 15);
+  mutt_refresh();
+
+  // sleep(2);
+  // endwin();
+  return 0;
+  // if (batch_mode)
   {
     goto main_ok; // TEST22: neomutt -B
   }
+#endif
 
   notify_observer_add(NeoMutt->notify, NT_CONFIG, main_hist_observer, NULL);
   notify_observer_add(NeoMutt->notify, NT_CONFIG, main_log_observer, NULL);

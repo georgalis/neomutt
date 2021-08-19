@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include "mutt/lib.h"
 #include "lib.h"
+#include "color/lib.h"
 #include "menu/lib.h"
 
 struct MuttWindow;
@@ -72,6 +73,7 @@ struct PagerPrivateData
 
   bool force_redraw;           ///< Repaint is needed
   MenuRedrawFlags redraw;      ///< When to redraw the screen
+  struct AttrColorList ansi_list; ///< XXX
   struct Notify *notify;       ///< Notifications: #NotifyPager, #PagerPrivateData
 
   int rc;                        ///< Return code from functions

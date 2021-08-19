@@ -214,6 +214,7 @@ int source_rc(const char *rcfile_path, struct Buffer *err)
     mutt_buffer_strcpy(linebuf, currentline);
 
     mutt_buffer_reset(err);
+    mutt_debug(LL_DEBUG1, "QWQ line: %s\n", mutt_buffer_string(linebuf));
     line_rc = mutt_parse_rc_buffer(linebuf, token, err);
     if (line_rc == MUTT_CMD_ERROR)
     {

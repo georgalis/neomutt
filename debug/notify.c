@@ -37,9 +37,6 @@
 #include "color/lib.h"
 #include "context.h"
 
-extern const struct Mapping ColorFields[];
-extern const struct Mapping ComposeColorFields[];
-
 static const char *get_event_type(enum NotifyType type)
 {
   switch (type)

@@ -1439,7 +1439,6 @@
 * Build
   - drop obsolete m4 scripts
   - don't look for lua libs unless asked for
-  - workaround slang warnings
   - lower the gettext requirement 0.18 -\> 0.17
   - add keymap_alldefs.h to BUILT_SOURCES
   - fix make dist distcheck

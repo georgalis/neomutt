@@ -24,8 +24,13 @@ autocrypt/schema.c
 bcache/bcache.c
 browser/browser.c
 browser/sort.c
+color/ansi.c
+color/attr.c
 color/color.c
 color/command.c
+color/curses.c
+color/debug.c
+color/merged.c
 color/notify.c
 color/quoted.c
 color/regex.c
@@ -270,6 +275,7 @@ pager/display.c
 pager/dlg_pager.c
 pager/do_pager.c
 pager/functions.c
+pager/line.c
 pager/message.c
 pager/pager.c
 pager/pbar.c

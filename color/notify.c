@@ -28,7 +28,7 @@
 
 #include "config.h"
 #include "mutt/lib.h"
-#include "lib.h"
+#include "core/lib.h"
 
 struct Notify *ColorsNotify; ///< Notifications: #ColorId, #EventColor
 

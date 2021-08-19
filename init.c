@@ -910,6 +910,7 @@ int mutt_init(struct ConfigSet *cs, bool skip_sys_rc, struct ListHead *commands)
   {
     if (np->data)
     {
+      mutt_debug(LL_DEBUG1, "QWQ source %s\n", np->data);
       if (source_rc(np->data, &err) != 0)
       {
         mutt_error("%s", err.data);
@@ -1015,7 +1016,7 @@ enum CommandResult mutt_parse_rc_buffer(struct Buffer *line,
     {
       if (mutt_str_equal(token->data, cmd[i].name))
       {
-        mutt_debug(LL_NOTIFY, "NT_COMMAND: %s\n", cmd[i].name);
+        mutt_debug(LL_DEBUG1, "QWQ NT_COMMAND: %s\n", cmd[i].name);
         rc = cmd[i].parse(token, line, cmd[i].data, err);
         if ((rc == MUTT_CMD_ERROR) || (rc == MUTT_CMD_FINISH))
           goto finish; /* Propagate return code */

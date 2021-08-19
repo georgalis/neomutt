@@ -847,23 +847,23 @@ void index_make_entry(struct Menu *menu, char *buf, size_t buflen, int line)
 /**
  * index_color - Calculate the colour for a line of the index - Implements Menu::color() - @ingroup menu_color
  */
-int index_color(struct Menu *menu, int line)
+struct AttrColor *index_color(struct Menu *menu, int line)
 {
   struct IndexPrivateData *priv = menu->mdata;
   struct IndexSharedData *shared = priv->shared;
   struct Mailbox *m = shared->mailbox;
   if (!m || (line < 0))
-    return 0;
+    return NULL;
 
   struct Email *e = mutt_get_virt_email(m, line);
   if (!e)
-    return 0;
+    return NULL;
 
-  if (e->pair)
-    return e->pair;
+  if (e->attr_color)
+    return e->attr_color;
 
   mutt_set_header_color(m, e);
-  return e->pair;
+  return e->attr_color;
 }
 
 /**
@@ -895,7 +895,7 @@ void mutt_draw_statusline(struct MuttWindow *win, int cols, const char *buf, siz
    */
   struct StatusSyntax
   {
-    int color; ///< Colour pair
+    struct AttrColor *attr_color;
     int first; ///< First character of that colour
     int last;  ///< Last character of that colour
   } *syntax = NULL;
@@ -932,7 +932,8 @@ void mutt_draw_statusline(struct MuttWindow *win, int cols, const char *buf, siz
       if (!found || (first < syntax[i].first) ||
           ((first == syntax[i].first) && (last > syntax[i].last)))
       {
-        syntax[i].color = cl->pair;
+        //QWQ syntax[i].color = cl->pair;
+        syntax[i].attr_color = &cl->attr_color;
         syntax[i].first = first;
         syntax[i].last = last;
       }
@@ -964,7 +965,7 @@ void mutt_draw_statusline(struct MuttWindow *win, int cols, const char *buf, siz
   for (i = 0; i < chunks; i++)
   {
     /* Highlighted text */
-    mutt_curses_set_attr(syntax[i].color);
+    mutt_curses_set_color(syntax[i].attr_color);
     mutt_window_addnstr(win, buf + offset, MIN(len, syntax[i].last) - offset);
     if (len <= syntax[i].last)
       goto dsl_finish; /* no more room */
@@ -1393,11 +1394,11 @@ void mutt_set_header_color(struct Mailbox *m, struct Email *e)
     if (mutt_pattern_exec(SLIST_FIRST(color->color_pattern),
                           MUTT_MATCH_FULL_ADDRESS, m, e, &cache))
     {
-      e->pair = color->pair;
+      e->attr_color = &color->attr_color;
       return;
     }
   }
-  e->pair = simple_color_get(MT_COLOR_NORMAL);
+  e->attr_color = simple_color_get(MT_COLOR_NORMAL);
 }
 
 /**
