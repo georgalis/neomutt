@@ -34,6 +34,7 @@
 #include "mutt/lib.h"
 #include "gui/lib.h"
 
+#ifdef USE_DEBUG_COLOR
 /// Log colour debugging at this level
 #define ColorLogLevel LL_DEBUG5
 
@@ -56,6 +57,7 @@ int color_debug(const char *format, ...)
 
   return len;
 }
+#endif
 
 /**
  * color_debug_log_color_attrs - Get a colourful string to represent a colour in the log
@@ -94,6 +96,7 @@ const char *color_debug_log_color_attrs(int fg, int bg, int attrs)
   return text;
 }
 
+#ifdef USE_DEBUG_COLOR
 /**
  * color_debug_log_color - Get a colourful string to represent a colour in the log
  * @param fg Foreground colour
@@ -141,6 +144,7 @@ const char *color_debug_log_attrs(int attrs)
   }
   return text;
 }
+#endif
 
 /**
  * color_debug_log_attrs_list - Get a string to represent some attributes in the log
@@ -191,6 +195,7 @@ const char *color_debug_log_name(char *buf, int buflen, int color)
   return buf;
 }
 
+#ifdef USE_DEBUG_COLOR
 /**
  * attr_color_dump - Dump an Attr Colour to the log
  * @param ac     AttrColor to dump
@@ -450,3 +455,4 @@ void merged_colors_dump(void)
 {
   attr_color_list_dump(&MergedColors, "MergedColors");
 }
+#endif
