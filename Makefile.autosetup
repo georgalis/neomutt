@@ -583,7 +583,7 @@ $(PWD)/notmuch:
 LIBPAGER=	libpager.a
 LIBPAGEROBJS=	pager/config.o pager/display.o pager/dlg_pager.o pager/do_pager.o \
 		pager/functions.o pager/message.o pager/pager.o pager/pbar.o pager/ppanel.o \
-		pager/private_data.o
+		pager/private_data.o pager/line.o
 CLEANFILES+=	$(LIBPAGER) $(LIBPAGEROBJS)
 ALLOBJS+=	$(LIBPAGEROBJS)
 
