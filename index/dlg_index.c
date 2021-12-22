@@ -933,7 +933,9 @@ void mutt_draw_statusline(struct MuttWindow *win, int cols, const char *buf, siz
           ((first == syntax[i].first) && (last > syntax[i].last)))
       {
         //QWQ syntax[i].color = cl->pair;
-        syntax[i].attr_color = &cl->attr_color;
+        struct AttrColor *ac_merge = merged_color_overlay(simple_color_get(MT_COLOR_STATUS), &cl->attr_color);
+
+        syntax[i].attr_color = ac_merge;
         syntax[i].first = first;
         syntax[i].last = last;
       }
