@@ -447,10 +447,11 @@ void menu_redraw_motion(struct Menu *menu)
                           (unsigned char *) buf, menu->sub);
 
     /* now draw the new one to reflect the change */
-    struct AttrColor *cur_color = menu->color(menu, menu->current);
+    struct AttrColor *cur_color = simple_color_get(MT_COLOR_INDICATOR);
     menu_make_entry(menu, buf, sizeof(buf), menu->current);
     menu_pad_string(menu, buf, sizeof(buf));
     mutt_window_move(menu->win, 0, menu->current - menu->top);
+    mutt_curses_set_color(cur_color);
     print_enriched_string(menu->win, menu->current, cur_color, ac_ind,
                           (unsigned char *) buf, menu->sub);
   }
