@@ -1352,6 +1352,69 @@ static int op_compose_group_lingual(struct ComposeSharedData *shared, int op)
 }
 
 /**
+ * op_compose_ungroup_attachment - Ungroup a 'multipart' attachment - Implements ::compose_function_t - @ingroup compose_function_api
+ */
+static int op_compose_ungroup_attachment(struct ComposeSharedData *shared, int op)
+{
+  if (shared->adata->actx->idx[shared->adata->menu->current]->body->type != TYPE_MULTIPART)
+  {
+    mutt_error(_("Attachment is not 'multipart'"));
+    return IR_ERROR;
+  }
+
+  short aidx = shared->adata->menu->current;
+  struct Body *bptr = shared->adata->actx->idx[aidx]->body;
+  struct Body *bptr_next = bptr->next;
+  struct Body *bptr_previous = NULL;
+  int parent_type = shared->adata->actx->idx[aidx]->parent_type;
+
+  /* traverse attachments to find previous body pointer */
+  if (bptr != shared->email->body)
+  {
+    for (struct Body *b = shared->email->body; b; b = b->next)
+    {
+      if (b->next == bptr)
+      {
+        bptr_previous = b;
+        break;
+      }
+    }
+  }
+
+  /* reorder body pointers */
+  if (bptr_previous)
+    bptr_previous->next = bptr->parts;
+  else
+    shared->email->body = bptr->parts;
+
+  for (short i = aidx + 1; i < shared->adata->actx->idxlen; i++)
+  {
+    shared->adata->actx->idx[i]->parent_type = parent_type;
+    shared->adata->actx->idx[i]->level -= 1;
+    if (shared->adata->actx->idx[i]->body->next == NULL)
+    {
+      shared->adata->actx->idx[i]->body->next = bptr_next;
+      break;
+    }
+  }
+
+  /* free memory */
+  shared->adata->actx->idx[aidx]->body->parts = NULL;
+  FREE(&shared->adata->actx->idx[aidx]->body);
+  FREE(&shared->adata->actx->idx[aidx]->tree);
+  FREE(&shared->adata->actx->idx[aidx]);
+
+  /* reorder actx */
+  for (short i = aidx; i < shared->adata->actx->idxlen - 1; i++)
+    shared->adata->actx->idx[i] = shared->adata->actx->idx[i + 1];
+  shared->adata->actx->idx[shared->adata->actx->idxlen - 1] = NULL;
+  shared->adata->actx->idxlen--;
+  update_menu(shared->adata->actx, shared->adata->menu, false);
+
+  return IR_SUCCESS;
+}
+
+/**
  * op_compose_ispell - Run ispell on the message - Implements ::compose_function_t - @ingroup compose_function_api
  */
 static int op_compose_ispell(struct ComposeSharedData *shared, int op)
@@ -2205,6 +2268,7 @@ struct ComposeFunction ComposeFunctions[] = {
   { OP_COMPOSE_GET_ATTACHMENT,      op_compose_get_attachment },
   { OP_COMPOSE_GROUP_ALTS,          op_compose_group_alts },
   { OP_COMPOSE_GROUP_LINGUAL,       op_compose_group_lingual },
+  { OP_COMPOSE_UNGROUP_ATTACHMENT,  op_compose_ungroup_attachment },
   { OP_COMPOSE_ISPELL,              op_compose_ispell },
 #ifdef MIXMASTER
   { OP_COMPOSE_MIX,                 op_compose_mix },
