@@ -374,6 +374,26 @@ static void update_idx(struct Menu *menu, struct AttachCtx *actx, struct AttachP
 }
 
 /**
+ * insert_idx - Insert a new attachment into the message at specified index position
+ * @param menu Current menu
+ * @param actx Attachment context
+ * @param ap   Attachment to add
+ * @param aidx Index position to insert attachment
+ */
+static void insert_idx(struct Menu *menu, struct AttachCtx *actx,
+                       struct AttachPtr *ap, short aidx)
+{
+  if ((aidx > 0) && (ap->level == actx->idx[aidx - 1]->level))
+    actx->idx[aidx - 1]->body->next = ap->body;
+  if ((aidx < actx->idxlen) && (ap->level == actx->idx[aidx]->level))
+    ap->body->next = actx->idx[aidx]->body;
+  ap->body->aptr = ap;
+  mutt_actx_ins_attach(actx, ap, aidx);
+  update_menu(actx, menu, false);
+  menu->current = aidx;
+}
+
+/**
  * compose_attach_swap - Swap two adjacent entries in the attachment list
  * @param[in]  msg   Body of email
  * @param[out] idx   Array of Attachments
@@ -1037,6 +1057,9 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
   struct Body *alts = NULL;
   /* group tagged message into a multipart/alternative */
   struct Body *bptr = shared->email->body;
+  int gidx = 0;
+  int glastidx = 0;
+  int glevel = 0;
   for (int i = 0; bptr;)
   {
     if (bptr->tagged)
@@ -1062,30 +1085,55 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
         bptr = bptr->next;
         alts = alts->next;
         alts->next = NULL;
+        // make grouped attachments consecutive
+        if (i > (glastidx + 1))
+        {
+          struct AttachPtr *saved = shared->adata->actx->idx[i];
+          int saved_num = shared->adata->actx->idx[i]->num;
+          for (int j = i; j > (glastidx + 1); j--)
+          {
+            shared->adata->actx->idx[j]->num += 1;
+            shared->adata->actx->idx[j] = shared->adata->actx->idx[j - 1];
+          }
+          shared->adata->actx->idx[glastidx + 1] = saved;
+          shared->adata->actx->idx[glastidx + 1]->num = saved_num;
+          if (shared->adata->actx->idxlen - 1 > i)
+          {
+            shared->adata->actx->idx[i]->body->next =
+                shared->adata->actx->idx[i + 1]->body;
+          }
+          else
+          {
+            shared->adata->actx->idx[i]->body->next = NULL;
+          }
+        }
+        glastidx++;
       }
       else
       {
+        gidx = i;
+        glastidx = i;
+        glevel = shared->adata->actx->idx[i]->level;
         group->parts = bptr;
         alts = bptr;
         bptr = bptr->next;
         alts->next = NULL;
       }
 
-      for (int j = i; j < shared->adata->actx->idxlen - 1; j++)
-      {
-        shared->adata->actx->idx[j] = shared->adata->actx->idx[j + 1];
-        shared->adata->actx->idx[j + 1] = NULL; /* for debug reason */
-      }
-      shared->adata->actx->idxlen--;
+      shared->adata->actx->idx[glastidx]->level = glevel + 1;
     }
     else
     {
       bptr = bptr->next;
-      i++;
     }
+    i++;
   }
 
   group->next = NULL;
+  if ((shared->adata->actx->idxlen - 1) > glastidx)
+    group->next = shared->adata->actx->idx[glastidx + 1]->body;
+  else
+    group->next = NULL;
   mutt_generate_boundary(&group->parameter);
 
   /* if no group desc yet, make one up */
@@ -1094,7 +1142,13 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
 
   struct AttachPtr *gptr = mutt_mem_calloc(1, sizeof(struct AttachPtr));
   gptr->body = group;
-  update_idx(shared->adata->menu, shared->adata->actx, gptr);
+  gptr->level = glevel;
+  insert_idx(shared->adata->menu, shared->adata->actx, gptr, gidx);
+
+  /* update e->body pointer */
+  shared->email->body = shared->adata->actx->idx[0]->body;
+
+  shared->adata->menu->current = gidx;
   menu_queue_redraw(shared->adata->menu, MENU_REDRAW_INDEX);
   return IR_SUCCESS;
 }
