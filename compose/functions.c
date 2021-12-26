@@ -884,8 +884,16 @@ static int op_compose_edit_headers(struct ComposeSharedData *shared, int op)
   char *err = NULL;
   mutt_env_to_local(shared->email->env);
   const char *const c_editor = cs_subset_string(shared->sub, "editor");
-  mutt_edit_headers(NONULL(c_editor), shared->email->body->filename,
-                    shared->email, shared->fcc);
+  if (shared->email->body->type == TYPE_MULTIPART)
+  {
+    mutt_edit_headers(NONULL(c_editor), shared->email->body->parts->filename,
+                      shared->email, shared->fcc);
+  }
+  else
+  {
+    mutt_edit_headers(NONULL(c_editor), shared->email->body->filename,
+                      shared->email, shared->fcc);
+  }
   if (mutt_env_to_intl(shared->email->env, &tag, &err))
   {
     mutt_error(_("Bad IDN in '%s': '%s'"), tag, err);
