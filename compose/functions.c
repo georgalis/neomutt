@@ -475,10 +475,14 @@ static void compose_attach_swap(struct Body *msg, struct AttachCtx *actx,
     while (idx[i]->level > idx[first]->level)
     {
       savedptr = idx[i];
-      idx[i] = idx[i - 1];
-      idx[i]->num = i;
-      idx[i - 1] = savedptr;
-      idx[i - 1]->num = i - 1;
+      int destidx = i - second + first;
+      for (int j = i; j > destidx; j--)
+      {
+        idx[j] = idx[j - 1];
+        idx[j]->num = j;
+      }
+      idx[destidx] = savedptr;
+      idx[destidx]->num = destidx;
       i++;
       if (i >= actx->idxlen)
         break;
@@ -1391,7 +1395,7 @@ static int op_compose_move_down(struct ComposeSharedData *shared, int op)
     return IR_NO_ACTION;
   }
   /* If next attachment is multipart find final position */
-  short finalidx = index + 1;
+  short finalidx = nextidx;
   if (shared->adata->actx->idx[finalidx]->body->type == TYPE_MULTIPART)
   {
     finalidx++;
@@ -1403,6 +1407,10 @@ static int op_compose_move_down(struct ComposeSharedData *shared, int op)
         break;
     }
     finalidx--;
+  }
+  else
+  {
+    finalidx = shared->adata->menu->current + 1;
   }
   compose_attach_swap(shared->email->body, shared->adata->actx, index, nextidx);
   mutt_update_tree(shared->adata->actx);
