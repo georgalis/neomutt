@@ -319,6 +319,20 @@ static int delete_attachment(struct AttachCtx *actx, int x)
     return -1;
   }
 
+  if (idx[rindex]->parent_type == TYPE_MULTIPART)
+  {
+    mutt_error(_("You may not delete children of a multipart attachment"));
+    idx[rindex]->body->tagged = false;
+    return -1;
+  }
+
+  if (idx[rindex]->body->type == TYPE_MULTIPART)
+  {
+    mutt_error(_("You may not delete a multipart attachment"));
+    idx[rindex]->body->tagged = false;
+    return -1;
+  }
+
   for (int y = 0; y < actx->idxlen; y++)
   {
     if (idx[y]->body->next == idx[rindex]->body)
@@ -1211,6 +1225,7 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
       }
 
       shared->adata->actx->idx[glastidx]->level = glevel + 1;
+      shared->adata->actx->idx[glastidx]->parent_type = TYPE_MULTIPART;
     }
   }
 
