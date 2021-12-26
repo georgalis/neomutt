@@ -1090,6 +1090,24 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
     return IR_ERROR;
   }
 
+  /* All tagged attachments must be at top level and can't have children */
+  for (int i = 0; i < shared->adata->actx->idxlen; i++)
+  {
+    if (shared->adata->actx->idx[i]->body->tagged)
+    {
+      if (shared->adata->actx->idx[i]->level > 0)
+      {
+        mutt_error(_("Attachments to be grouped must be at top level"));
+        return IR_ERROR;
+      }
+      if (shared->adata->actx->idx[i]->body->type == TYPE_MULTIPART)
+      {
+        mutt_error(_("Attachments to be grouped can not be multipart"));
+        return IR_ERROR;
+      }
+    }
+  }
+
   struct Body *group = mutt_body_new();
   group->type = TYPE_MULTIPART;
   group->subtype = mutt_str_dup("alternative");
