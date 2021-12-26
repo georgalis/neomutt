@@ -1170,6 +1170,7 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
     bptr = shared->adata->actx->idx[i]->body;
     if (bptr->tagged)
     {
+      shared->adata->menu->tagged--;
       bptr->tagged = false;
       bptr->disposition = DISP_INLINE;
 
