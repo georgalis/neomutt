@@ -364,9 +364,16 @@ static int delete_attachment(struct AttachCtx *actx, int x)
  */
 static void update_idx(struct Menu *menu, struct AttachCtx *actx, struct AttachPtr *ap)
 {
-  ap->level = (actx->idxlen > 0) ? actx->idx[actx->idxlen - 1]->level : 0;
-  if (actx->idxlen)
-    actx->idx[actx->idxlen - 1]->body->next = ap->body;
+  ap->level = 0;
+  for (short i = actx->idxlen; i > 0; i--)
+  {
+    if (ap->level == actx->idx[i - 1]->level)
+    {
+      actx->idx[i - 1]->body->next = ap->body;
+      break;
+    }
+  }
+
   ap->body->aptr = ap;
   mutt_actx_add_attach(actx, ap);
   update_menu(actx, menu, false);
@@ -383,10 +390,31 @@ static void update_idx(struct Menu *menu, struct AttachCtx *actx, struct AttachP
 static void insert_idx(struct Menu *menu, struct AttachCtx *actx,
                        struct AttachPtr *ap, short aidx)
 {
-  if ((aidx > 0) && (ap->level == actx->idx[aidx - 1]->level))
-    actx->idx[aidx - 1]->body->next = ap->body;
-  if ((aidx < actx->idxlen) && (ap->level == actx->idx[aidx]->level))
-    ap->body->next = actx->idx[aidx]->body;
+  ap->level = 0;
+  /* set body pointers */
+  if (aidx > 0)
+  {
+    for (short i = aidx; i > 0; i--)
+    {
+      if (ap->level == actx->idx[i - 1]->level)
+      {
+        actx->idx[i - 1]->body->next = ap->body;
+        break;
+      }
+    }
+  }
+  if (aidx < actx->idxlen)
+  {
+    for (short i = aidx; i < actx->idxlen; i++)
+    {
+      if (ap->level == actx->idx[i]->level)
+      {
+        ap->body->next = actx->idx[i]->body;
+        break;
+      }
+    }
+  }
+
   ap->body->aptr = ap;
   mutt_actx_ins_attach(actx, ap, aidx);
   update_menu(actx, menu, false);
@@ -1115,12 +1143,13 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
 
   struct Body *alts = NULL;
   /* group tagged message into a multipart/alternative */
-  struct Body *bptr = shared->email->body;
+  struct Body *bptr = NULL;
   int gidx = 0;
   int glastidx = 0;
   int glevel = 0;
-  for (int i = 0; bptr;)
+  for (int i = 0; i < shared->adata->actx->idxlen; i++)
   {
+    bptr = shared->adata->actx->idx[i]->body;
     if (bptr->tagged)
     {
       bptr->tagged = false;
@@ -1141,7 +1170,6 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
       if (alts)
       {
         alts->next = bptr;
-        bptr = bptr->next;
         alts = alts->next;
         alts->next = NULL;
         // make grouped attachments consecutive
@@ -1175,17 +1203,11 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
         glevel = shared->adata->actx->idx[i]->level;
         group->parts = bptr;
         alts = bptr;
-        bptr = bptr->next;
         alts->next = NULL;
       }
 
       shared->adata->actx->idx[glastidx]->level = glevel + 1;
     }
-    else
-    {
-      bptr = bptr->next;
-    }
-    i++;
   }
 
   group->next = NULL;
