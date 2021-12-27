@@ -952,6 +952,8 @@ int mutt_attach_display_loop(struct ConfigSubset *sub, struct Menu *menu, int op
       case OP_VIEW_ATTACH:
       {
         struct AttachPtr *cur_att = current_attachment(actx, menu);
+        if (cur_att->body->type == TYPE_MULTIPART)
+          cur_att = cur_att->body->parts->aptr;
         op = mutt_view_attachment(cur_att->fp, cur_att->body, MUTT_VA_REGULAR,
                                   e, actx, menu->win);
         break;
