@@ -1162,6 +1162,7 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
   struct Body *alts = NULL;
   /* group tagged message into a multipart/alternative */
   struct Body *bptr = NULL;
+  struct Body *firstbptr = NULL;
   int gidx = 0;
   int glastidx = 0;
   int glevel = 0;
@@ -1170,20 +1171,12 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
     bptr = shared->adata->actx->idx[i]->body;
     if (bptr->tagged)
     {
+      if (!firstbptr)
+        firstbptr = bptr;
+
       shared->adata->menu->tagged--;
       bptr->tagged = false;
       bptr->disposition = DISP_INLINE;
-
-      /* for first match, set group desc according to match */
-      if (!group->description)
-      {
-        char *p = bptr->description ? bptr->description : bptr->filename;
-        if (p)
-        {
-          group->description = mutt_mem_calloc(1, strlen(p) + strlen(ALTS_TAG) + 1);
-          sprintf(group->description, ALTS_TAG, p);
-        }
-      }
 
       // append bptr to the alts list, and remove from the shared->email->body list
       if (alts)
@@ -1237,9 +1230,16 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
     group->next = NULL;
   mutt_generate_boundary(&group->parameter);
 
-  /* if no group desc yet, make one up */
-  if (!group->description)
-    group->description = mutt_str_dup("unknown alternative group");
+  /* set group description */
+  if (!firstbptr->unlink || firstbptr->description)
+  {
+    char *p = firstbptr->description ? firstbptr->description : firstbptr->filename;
+    if (p)
+    {
+      group->description = mutt_mem_calloc(1, strlen(p) + strlen(ALTS_TAG) + 1);
+      sprintf(group->description, ALTS_TAG, p);
+    }
+  }
 
   struct AttachPtr *gptr = mutt_mem_calloc(1, sizeof(struct AttachPtr));
   gptr->body = group;
