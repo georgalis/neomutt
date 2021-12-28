@@ -1157,7 +1157,6 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
   struct Body *group = mutt_body_new();
   group->type = TYPE_MULTIPART;
   group->subtype = mutt_str_dup("alternative");
-  group->disposition = DISP_INLINE;
 
   struct Body *alts = NULL;
   /* group tagged message into a multipart/alternative */
@@ -1172,11 +1171,13 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
     if (bptr->tagged)
     {
       if (!firstbptr)
+      {
         firstbptr = bptr;
+        group->disposition = firstbptr->disposition;
+      }
 
       shared->adata->menu->tagged--;
       bptr->tagged = false;
-      bptr->disposition = DISP_INLINE;
 
       // append bptr to the alts list, and remove from the shared->email->body list
       if (alts)
