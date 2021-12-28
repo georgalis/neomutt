@@ -1157,6 +1157,7 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
   struct Body *group = mutt_body_new();
   group->type = TYPE_MULTIPART;
   group->subtype = mutt_str_dup("alternative");
+  group->encoding = ENC_7BIT;
 
   struct Body *alts = NULL;
   /* group tagged message into a multipart/alternative */
