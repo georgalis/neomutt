@@ -1522,6 +1522,7 @@ static int op_compose_move_down(struct ComposeSharedData *shared, int op)
     mutt_error(_("Attachment can't be moved out of group"));
     return IR_ERROR;
   }
+
   /* Find next attachment at current level */
   short nextidx = index + 1;
   while ((nextidx < shared->adata->actx->idxlen) &&
@@ -1535,24 +1536,18 @@ static int op_compose_move_down(struct ComposeSharedData *shared, int op)
     mutt_error(_("Attachment is already at bottom"));
     return IR_NO_ACTION;
   }
-  /* If next attachment is multipart find final position */
-  short finalidx = nextidx;
-  if (shared->adata->actx->idx[finalidx]->body->type == TYPE_MULTIPART)
+
+  /* Find final position */
+  short finalidx = shared->adata->menu->current + 1;
+  if (shared->adata->actx->idx[nextidx]->body->type == TYPE_MULTIPART)
   {
-    finalidx++;
-    while (shared->adata->actx->idx[finalidx]->level >
-           shared->adata->actx->idx[index + 1]->level)
+    for (struct Body *part = shared->adata->actx->idx[nextidx]->body->parts;
+         part; part = part->next)
     {
       finalidx++;
-      if (finalidx >= shared->adata->actx->idxlen)
-        break;
     }
-    finalidx--;
   }
-  else
-  {
-    finalidx = shared->adata->menu->current + 1;
-  }
+
   compose_attach_swap(shared->email->body, shared->adata->actx, index, nextidx);
   mutt_update_tree(shared->adata->actx);
   menu_queue_redraw(shared->adata->menu, MENU_REDRAW_INDEX);
