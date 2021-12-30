@@ -453,22 +453,41 @@ static void compose_attach_swap(struct Body *msg, struct AttachCtx *actx,
 
   /* Reorder Body pointers.
    * Must traverse msg from top since Body has no previous ptr.  */
-  for (struct Body *part = msg; part; part = part->next)
+  bool prev_body_found = false;
+  for (struct Body *b = msg; b; b = b->next)
   {
-    if (part->next == idx[first]->body)
+    if (b->next == idx[first]->body)
     {
+      /* attachments to be swapped are at top level */
       idx[first]->body->next = idx[second]->body->next;
       idx[second]->body->next = idx[first]->body;
-      part->next = idx[second]->body;
+      b->next = idx[second]->body;
       break;
     }
-    /* also check for multipart groups */
-    if (part->parts == idx[first]->body)
+    if (b->type == TYPE_MULTIPART)
     {
-      idx[first]->body->next = idx[second]->body->next;
-      idx[second]->body->next = idx[first]->body;
-      part->parts = idx[second]->body;
-      break;
+      if (b->parts == idx[first]->body)
+      {
+        /* first attachment is at start of group */
+        idx[first]->body->next = idx[second]->body->next;
+        idx[second]->body->next = idx[first]->body;
+        b->parts = idx[second]->body;
+        break;
+      }
+      for (struct Body *part = b->parts; part; part = part->next)
+      {
+        if (part->next == idx[first]->body)
+        {
+          /* attachments to be swapped are in a group */
+          idx[first]->body->next = idx[second]->body->next;
+          idx[second]->body->next = idx[first]->body;
+          part->next = idx[second]->body;
+          prev_body_found = true;
+          break;
+        }
+      }
+      if (prev_body_found)
+        break;
     }
   }
 
