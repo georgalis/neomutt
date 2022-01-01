@@ -2048,6 +2048,8 @@ static int op_delete(struct ComposeSharedData *shared, int op)
   if (cur_att->unowned)
     cur_att->body->unlink = false;
   int index = menu_get_index(shared->adata->menu);
+  if (cur_att->body->tagged)
+    shared->adata->menu->tagged--;
   if (delete_attachment(shared->adata->actx, index) == -1)
     return IR_ERROR;
   update_menu(shared->adata->actx, shared->adata->menu, false);
