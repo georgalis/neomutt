@@ -1262,7 +1262,7 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
   mutt_generate_boundary(&group->parameter);
 
   /* set group description */
-  if (!firstbptr->unlink || firstbptr->description)
+  if (firstbptr->disposition != DISP_INLINE || firstbptr->description)
   {
     char *p = firstbptr->description ? firstbptr->description : firstbptr->filename;
     if (p)
@@ -1410,7 +1410,7 @@ static int op_compose_group_lingual(struct ComposeSharedData *shared, int op)
   mutt_generate_boundary(&group->parameter);
 
   /* set group description */
-  if (!firstbptr->unlink || firstbptr->description)
+  if (firstbptr->disposition != DISP_INLINE || firstbptr->description)
   {
     char *p = firstbptr->description ? firstbptr->description : firstbptr->filename;
     if (p)
