@@ -1269,6 +1269,8 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
       p = firstbptr->description;
     else if (firstbptr->d_filename)
       p = firstbptr->d_filename;
+    else if (mutt_path_basename(firstbptr->filename))
+      p = (char *) mutt_path_basename(firstbptr->filename);
     else
       p = firstbptr->filename;
     if (p)
@@ -1423,6 +1425,8 @@ static int op_compose_group_lingual(struct ComposeSharedData *shared, int op)
       p = firstbptr->description;
     else if (firstbptr->d_filename)
       p = firstbptr->d_filename;
+    else if (mutt_path_basename(firstbptr->filename))
+      p = (char *) mutt_path_basename(firstbptr->filename);
     else
       p = firstbptr->filename;
     if (p)
