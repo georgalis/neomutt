@@ -1264,7 +1264,13 @@ static int op_compose_group_alts(struct ComposeSharedData *shared, int op)
   /* set group description */
   if (firstbptr->disposition != DISP_INLINE || firstbptr->description)
   {
-    char *p = firstbptr->description ? firstbptr->description : firstbptr->filename;
+    char *p;
+    if (firstbptr->description)
+      p = firstbptr->description;
+    else if (firstbptr->d_filename)
+      p = firstbptr->d_filename;
+    else
+      p = firstbptr->filename;
     if (p)
     {
       group->description = mutt_mem_calloc(1, strlen(p) + strlen(ALTS_TAG) + 1);
@@ -1412,7 +1418,13 @@ static int op_compose_group_lingual(struct ComposeSharedData *shared, int op)
   /* set group description */
   if (firstbptr->disposition != DISP_INLINE || firstbptr->description)
   {
-    char *p = firstbptr->description ? firstbptr->description : firstbptr->filename;
+    char *p;
+    if (firstbptr->description)
+      p = firstbptr->description;
+    else if (firstbptr->d_filename)
+      p = firstbptr->d_filename;
+    else
+      p = firstbptr->filename;
     if (p)
     {
       group->description = mutt_mem_calloc(1, strlen(p) + strlen(LINGUAL_TAG) + 1);
