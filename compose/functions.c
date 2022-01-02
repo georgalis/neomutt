@@ -624,6 +624,8 @@ static int compose_group_attachments(struct ComposeSharedData *shared,
       {
         firstbptr = bptr;
         group->disposition = firstbptr->disposition;
+        if (firstbptr->language && !mutt_str_equal(subtype, "multilingual"))
+          group->language = mutt_str_dup(firstbptr->language);
         gparent_type = firstbptr->aptr->parent_type;
       }
 
