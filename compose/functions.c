@@ -976,8 +976,10 @@ static int op_compose_edit_headers(struct ComposeSharedData *shared, int op)
   const char *const c_editor = cs_subset_string(shared->sub, "editor");
   if (shared->email->body->type == TYPE_MULTIPART)
   {
-    mutt_edit_headers(NONULL(c_editor), shared->email->body->parts->filename,
-                      shared->email, shared->fcc);
+    struct Body *b = shared->email->body->parts;
+    while (b->type == TYPE_MULTIPART)
+      b = b->parts;
+    mutt_edit_headers(NONULL(c_editor), b->filename, shared->email, shared->fcc);
   }
   else
   {
