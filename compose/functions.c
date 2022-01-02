@@ -1583,53 +1583,69 @@ static int op_compose_ungroup_attachment(struct ComposeSharedData *shared, int o
   }
 
   short aidx = shared->adata->menu->current;
-  struct Body *bptr = shared->adata->actx->idx[aidx]->body;
+  struct AttachCtx *actx = shared->adata->actx;
+  struct Body *bptr = actx->idx[aidx]->body;
   struct Body *bptr_next = bptr->next;
   struct Body *bptr_previous = NULL;
-  int parent_type = shared->adata->actx->idx[aidx]->parent_type;
+  struct Body *bptr_parent = NULL;
+  int parent_type = actx->idx[aidx]->parent_type;
+  int level = actx->idx[aidx]->level;
 
-  /* traverse attachments to find previous body pointer */
-  if (bptr != shared->email->body)
+  // find previous or parent body pointer
+  if (aidx > 0)
   {
-    for (struct Body *b = shared->email->body; b; b = b->next)
+    if (actx->idx[aidx - 1]->body->parts == bptr)
     {
-      if (b->next == bptr)
+      bptr_parent = actx->idx[aidx - 1]->body;
+    }
+    else
+    {
+      for (int i = aidx - 1; i >= 0; i--)
       {
-        bptr_previous = b;
-        break;
+        if (actx->idx[i]->body->next == bptr)
+          bptr_previous = actx->idx[i]->body;
       }
     }
   }
 
-  /* reorder body pointers */
+  // reorder body pointers
   if (bptr_previous)
     bptr_previous->next = bptr->parts;
+  else if (bptr_parent)
+    bptr_parent->parts = bptr->parts;
   else
     shared->email->body = bptr->parts;
 
-  for (short i = aidx + 1; i < shared->adata->actx->idxlen; i++)
+  int i = aidx + 1;
+  while (actx->idx[i]->level > level)
   {
-    shared->adata->actx->idx[i]->parent_type = parent_type;
-    shared->adata->actx->idx[i]->level -= 1;
-    if (shared->adata->actx->idx[i]->body->next == NULL)
+    actx->idx[i]->level--;
+    actx->idx[i]->num--;
+    if (actx->idx[i]->level == level)
     {
-      shared->adata->actx->idx[i]->body->next = bptr_next;
-      break;
+      actx->idx[i]->parent_type = parent_type;
+      if (!actx->idx[i]->body->next)
+        actx->idx[i]->body->next = bptr_next;
     }
+    i++;
+    if (i == actx->idxlen)
+      break;
   }
 
-  /* free memory */
-  shared->adata->actx->idx[aidx]->body->parts = NULL;
-  FREE(&shared->adata->actx->idx[aidx]->body);
-  FREE(&shared->adata->actx->idx[aidx]->tree);
-  FREE(&shared->adata->actx->idx[aidx]);
+  // free memory
+  actx->idx[aidx]->body->parts = NULL;
+  actx->idx[aidx]->body->next = NULL;
+  actx->idx[aidx]->body->email = NULL;
+  mutt_body_free(&actx->idx[aidx]->body);
+  FREE(&actx->idx[aidx]->tree);
+  FREE(&actx->idx[aidx]);
 
-  /* reorder actx */
-  for (short i = aidx; i < shared->adata->actx->idxlen - 1; i++)
-    shared->adata->actx->idx[i] = shared->adata->actx->idx[i + 1];
-  shared->adata->actx->idx[shared->adata->actx->idxlen - 1] = NULL;
-  shared->adata->actx->idxlen--;
-  update_menu(shared->adata->actx, shared->adata->menu, false);
+  // reorder attachment list
+  for (int j = aidx; j < actx->idxlen - 1; j++)
+    actx->idx[j] = actx->idx[j + 1];
+  actx->idx[actx->idxlen - 1] = NULL;
+  actx->idxlen--;
+  update_menu(actx, shared->adata->menu, false);
 
   return IR_SUCCESS;
 }
