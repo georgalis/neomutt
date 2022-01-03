@@ -86,6 +86,9 @@
 #ifdef USE_IMAP
 #include "imap/lib.h"
 #endif
+#ifdef USE_DEBUG_GRAPHVIZ
+#include "debug/lib.h"
+#endif
 
 static const char *Not_available_in_this_menu =
     N_("Not available in this menu");
@@ -2258,6 +2261,10 @@ static int op_forget_passphrase(struct ComposeSharedData *shared, int op)
  */
 static int op_print(struct ComposeSharedData *shared, int op)
 {
+#ifdef USE_DEBUG_GRAPHVIZ
+  dump_graphviz_body(shared->email->body);
+  return IR_SUCCESS;
+#endif
   if (!check_count(shared->adata->actx))
     return IR_NO_ACTION;
   struct AttachPtr *cur_att =
