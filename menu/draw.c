@@ -447,7 +447,8 @@ void menu_redraw_motion(struct Menu *menu)
                           (unsigned char *) buf, menu->sub);
 
     /* now draw the new one to reflect the change */
-    struct AttrColor *cur_color = simple_color_get(MT_COLOR_INDICATOR);
+    struct AttrColor *cur_color = menu->color(menu, menu->current);
+    cur_color = merged_color_overlay(cur_color, ac_ind);
     menu_make_entry(menu, buf, sizeof(buf), menu->current);
     menu_pad_string(menu, buf, sizeof(buf));
     mutt_window_move(menu->win, 0, menu->current - menu->top);
