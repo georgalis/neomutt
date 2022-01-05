@@ -251,21 +251,7 @@ static size_t add_indent(char *buf, size_t buflen, const struct SbEntry *sbe)
 static struct AttrColor *calc_color(const struct Mailbox *m, bool current, bool highlight)
 {
   enum ColorId color = MT_COLOR_NORMAL;
-
-  if (current)
-  {
-    if (simple_color_is_set(MT_COLOR_SIDEBAR_INDICATOR))
-      color = MT_COLOR_SIDEBAR_INDICATOR;
-    else
-      color = MT_COLOR_INDICATOR;
-    goto done;
-  }
-
-  if (highlight)
-  {
-    color = MT_COLOR_SIDEBAR_HIGHLIGHT;
-    goto done;
-  }
+  struct AttrColor *ac = NULL;
 
   if (m->has_new)
   {
@@ -298,7 +284,28 @@ static struct AttrColor *calc_color(const struct Mailbox *m, bool current, bool 
   }
 
 done:
-  return simple_color_get(color);
+  ac = simple_color_get(color);
+
+  if (current || highlight)
+  {
+    if (current)
+    {
+      if (simple_color_is_set(MT_COLOR_SIDEBAR_INDICATOR))
+        color = MT_COLOR_SIDEBAR_INDICATOR;
+      else
+        color = MT_COLOR_INDICATOR;
+    }
+    else
+    {
+      color = MT_COLOR_SIDEBAR_HIGHLIGHT;
+    }
+
+    struct AttrColor *ac_overlay = simple_color_get(color);
+
+    ac = merged_color_overlay(ac, ac_overlay);
+  }
+
+  return ac;
 }
 
 /**
