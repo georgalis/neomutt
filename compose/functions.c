@@ -812,6 +812,8 @@ static int compose_group_attachments(struct ComposeSharedData *shared,
 
   shared->adata->menu->current = gidx;
   menu_queue_redraw(shared->adata->menu, MENU_REDRAW_INDEX);
+
+  mutt_message_hook(NULL, shared->email, MUTT_SEND2_HOOK);
   return IR_SUCCESS;
 }
 
@@ -1569,6 +1571,7 @@ static int op_compose_ungroup_attachment(struct ComposeSharedData *shared, int o
   actx->idxlen--;
   update_menu(actx, shared->adata->menu, false);
 
+  mutt_message_hook(NULL, shared->email, MUTT_SEND2_HOOK);
   return IR_SUCCESS;
 }
 
