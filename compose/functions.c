@@ -2256,12 +2256,65 @@ static int op_forget_passphrase(struct ComposeSharedData *shared, int op)
   return IR_SUCCESS;
 }
 
+char body_name(const struct Body *b)
+{
+  if (!b)
+    return '!';
+
+  if (b->parts)
+    return '&';
+
+  if (b->description)
+    return b->description[0];
+
+  if (b->filename)
+  {
+    const char *base = basename(b->filename);
+    if (mutt_str_startswith(base, "neomutt-"))
+      return '0';
+
+    return base[0];
+  }
+
+  return '!';
+}
+
+void dump_body_next(struct Buffer *buf, const struct Body *b)
+{
+  if (!b)
+    return;
+
+  mutt_buffer_addstr(buf, "<");
+  for (; b; b = b->next)
+  {
+    mutt_buffer_add_printf(buf, "%c", body_name(b));
+    dump_body_next(buf, b->parts);
+    if (b->next)
+      mutt_buffer_addch(buf, ',');
+  }
+  mutt_buffer_addstr(buf, ">");
+}
+
+void dump_body_one_line(const struct Body *b)
+{
+  if (!b)
+    return;
+
+  struct Buffer *buf = mutt_buffer_pool_get();
+  mutt_buffer_addstr(buf, "Body layout: ");
+  dump_body_next(buf, b);
+
+  mutt_message(mutt_buffer_string(buf));
+  mutt_buffer_pool_release(&buf);
+}
+
 /**
  * op_print - Print the current entry - Implements ::compose_function_t - @ingroup compose_function_api
  */
 static int op_print(struct ComposeSharedData *shared, int op)
 {
 #ifdef USE_DEBUG_GRAPHVIZ
+  dump_body_one_line(shared->email->body);
   dump_graphviz_body(shared->email->body);
   return IR_SUCCESS;
 #endif
