@@ -381,6 +381,8 @@ static int delete_attachment(struct AttachCtx *actx, int x)
 
   struct AttachPtr **idx = actx->idx;
   int rindex = actx->v2r[x];
+  struct Body *bptr_parent = NULL;
+  int part_count = 1;
 
   if ((rindex == 0) && (actx->idxlen == 1))
   {
@@ -389,53 +391,71 @@ static int delete_attachment(struct AttachCtx *actx, int x)
     return -1;
   }
 
-  if (idx[rindex]->parent_type == TYPE_MULTIPART)
+  if (idx[rindex]->level > 0)
   {
-    mutt_error(_("You may not delete children of a multipart attachment"));
-    idx[rindex]->body->tagged = false;
-    return -1;
-  }
-
-  if (idx[rindex]->body->type == TYPE_MULTIPART)
-  {
-    mutt_error(_("You may not delete a multipart attachment"));
-    idx[rindex]->body->tagged = false;
-    return -1;
-  }
-
-  for (int y = 0; y < actx->idxlen; y++)
-  {
-    if (idx[y]->body->next == idx[rindex]->body)
+    if (find_body_parent(idx[0]->body, NULL, idx[rindex]->body, &bptr_parent))
     {
-      idx[y]->body->next = idx[rindex]->body->next;
-      break;
+      if (count_body_parts(bptr_parent->parts, false) < 3)
+      {
+        mutt_error(_("Can't leave group with only one attachment"));
+        idx[rindex]->body->tagged = false;
+        return -1;
+      }
     }
   }
 
+  if (idx[rindex]->body->type == TYPE_MULTIPART)
+    part_count += count_body_parts(idx[rindex]->body->parts, true);
+
+  // reorder body pointers
+  if (bptr_parent)
+  {
+    if (bptr_parent->parts == idx[rindex]->body)
+    {
+      bptr_parent->parts = idx[rindex + part_count]->body;
+    }
+    else
+    {
+      for (struct Body *b = bptr_parent->parts; b; b = b->next)
+      {
+        if (b->next == idx[rindex]->body)
+        {
+          b->next = idx[rindex]->body->next;
+          break;
+        }
+      }
+    }
+  }
+  else
+  {
+    for (int y = 0; y < actx->idxlen; y++)
+    {
+      if (idx[y]->body->next == idx[rindex]->body)
+      {
+        idx[y]->body->next = idx[rindex]->body->next;
+        break;
+      }
+    }
+  }
+
+  // free memory
   idx[rindex]->body->next = NULL;
-  /* mutt_make_message_attach() creates body->parts, shared by
-   * body->email->body.  If we NULL out that, it creates a memory
-   * leak because mutt_free_body() frees body->parts, not
-   * body->email->body.
-   *
-   * Other mutt_send_message() message constructors are careful to free
-   * any body->parts, removing depth:
-   *  - mutt_prepare_template() used by postponed, resent, and draft files
-   *  - mutt_copy_body() used by the recvattach menu and $forward_attachments.
-   *
-   * I believe it is safe to completely remove the "body->parts =
-   * NULL" statement.  But for safety, am doing so only for the case
-   * it must be avoided: message attachments.
-   */
-  if (!idx[rindex]->body->email)
-    idx[rindex]->body->parts = NULL;
   mutt_body_free(&(idx[rindex]->body));
-  FREE(&idx[rindex]->tree);
-  FREE(&idx[rindex]);
-  for (; rindex < actx->idxlen - 1; rindex++)
-    idx[rindex] = idx[rindex + 1];
-  idx[actx->idxlen - 1] = NULL;
-  actx->idxlen--;
+  for (int i = 0; i < part_count; i++)
+  {
+    FREE(&idx[rindex + i]->tree);
+    FREE(&idx[rindex + i]);
+  }
+
+  // reorder attachment list
+  for (int i = rindex; i < (actx->idxlen - part_count); i++)
+  {
+    idx[i] = idx[i + part_count];
+    idx[i]->num -= part_count;
+  }
+  for (int i = 0; i < part_count; i++)
+    idx[actx->idxlen - i - 1] = NULL;
+  actx->idxlen -= part_count;
 
   return 0;
 }
@@ -2104,10 +2124,15 @@ static int op_delete(struct ComposeSharedData *shared, int op)
   if (cur_att->unowned)
     cur_att->body->unlink = false;
   int index = menu_get_index(shared->adata->menu);
-  if (cur_att->body->tagged)
-    shared->adata->menu->tagged--;
   if (delete_attachment(shared->adata->actx, index) == -1)
     return IR_ERROR;
+  int tagged_count = 0;
+  for (int i = 0; i < shared->adata->actx->idxlen; i++)
+  {
+    if (shared->adata->actx->idx[i]->body->tagged)
+      tagged_count++;
+  }
+  shared->adata->menu->tagged = tagged_count;
   update_menu(shared->adata->actx, shared->adata->menu, false);
   notify_send(shared->notify, NT_COMPOSE, NT_COMPOSE_ATTACH, NULL);
   index = menu_get_index(shared->adata->menu);
