@@ -390,7 +390,6 @@ static int delete_attachment(struct AttachCtx *actx, int x)
   if ((rindex == 0) && (actx->idxlen == 1))
   {
     mutt_error(_("You may not delete the only attachment"));
-    idx[rindex]->body->tagged = false;
     return -1;
   }
 
@@ -401,7 +400,6 @@ static int delete_attachment(struct AttachCtx *actx, int x)
       if (count_body_parts(bptr_parent->parts, false) < 3)
       {
         mutt_error(_("Can't leave group with only one attachment"));
-        idx[rindex]->body->tagged = false;
         return -1;
       }
     }
