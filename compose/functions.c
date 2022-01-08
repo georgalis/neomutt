@@ -373,29 +373,29 @@ static bool edit_address_list(int field, struct AddressList *al)
 /**
  * delete_attachment - Delete an attachment
  * @param actx Attachment context
- * @param x    Index number of attachment
+ * @param idx  Index number of attachment to delete
  * @retval  0 Success
  * @retval -1 Error
  */
-static int delete_attachment(struct AttachCtx *actx, int x)
+static int delete_attachment(struct AttachCtx *actx, int aidx)
 {
-  if (!actx || (x < 0) || (x >= actx->idxlen))
+  if (!actx || (aidx < 0) || (aidx >= actx->idxlen))
     return -1;
 
   struct AttachPtr **idx = actx->idx;
-  int rindex = actx->v2r[x];
+  int ridx = actx->v2r[aidx];
   struct Body *bptr_parent = NULL;
   int part_count = 1;
 
-  if ((rindex == 0) && (actx->idxlen == 1))
+  if ((ridx == 0) && (actx->idxlen == 1))
   {
     mutt_error(_("You may not delete the only attachment"));
     return -1;
   }
 
-  if (idx[rindex]->level > 0)
+  if (idx[ridx]->level > 0)
   {
-    if (find_body_parent(idx[0]->body, NULL, idx[rindex]->body, &bptr_parent))
+    if (find_body_parent(idx[0]->body, NULL, idx[ridx]->body, &bptr_parent))
     {
       if (count_body_parts(bptr_parent->parts, false) < 3)
       {
@@ -405,23 +405,23 @@ static int delete_attachment(struct AttachCtx *actx, int x)
     }
   }
 
-  if (idx[rindex]->body->type == TYPE_MULTIPART)
-    part_count += count_body_parts(idx[rindex]->body->parts, true);
+  if (idx[ridx]->body->type == TYPE_MULTIPART)
+    part_count += count_body_parts(idx[ridx]->body->parts, true);
 
   // reorder body pointers
   if (bptr_parent)
   {
-    if (bptr_parent->parts == idx[rindex]->body)
+    if (bptr_parent->parts == idx[ridx]->body)
     {
-      bptr_parent->parts = idx[rindex + part_count]->body;
+      bptr_parent->parts = idx[ridx + part_count]->body;
     }
     else
     {
       for (struct Body *b = bptr_parent->parts; b; b = b->next)
       {
-        if (b->next == idx[rindex]->body)
+        if (b->next == idx[ridx]->body)
         {
-          b->next = idx[rindex]->body->next;
+          b->next = idx[ridx]->body->next;
           break;
         }
       }
@@ -429,27 +429,27 @@ static int delete_attachment(struct AttachCtx *actx, int x)
   }
   else
   {
-    for (int y = 0; y < actx->idxlen; y++)
+    for (int i = 0; i < actx->idxlen; i++)
     {
-      if (idx[y]->body->next == idx[rindex]->body)
+      if (idx[i]->body->next == idx[ridx]->body)
       {
-        idx[y]->body->next = idx[rindex]->body->next;
+        idx[i]->body->next = idx[ridx]->body->next;
         break;
       }
     }
   }
 
   // free memory
-  idx[rindex]->body->next = NULL;
-  mutt_body_free(&(idx[rindex]->body));
+  idx[ridx]->body->next = NULL;
+  mutt_body_free(&(idx[ridx]->body));
   for (int i = 0; i < part_count; i++)
   {
-    FREE(&idx[rindex + i]->tree);
-    FREE(&idx[rindex + i]);
+    FREE(&idx[ridx + i]->tree);
+    FREE(&idx[ridx + i]);
   }
 
   // reorder attachment list
-  for (int i = rindex; i < (actx->idxlen - part_count); i++)
+  for (int i = ridx; i < actx->idxlen - part_count; i++)
   {
     idx[i] = idx[i + part_count];
     idx[i]->num -= part_count;
