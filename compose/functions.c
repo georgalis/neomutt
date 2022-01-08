@@ -2103,13 +2103,12 @@ static int op_delete(struct ComposeSharedData *shared, int op)
   int index = menu_get_index(shared->adata->menu);
   if (delete_attachment(shared->adata->actx, index) == -1)
     return IR_ERROR;
-  int tagged_count = 0;
+  shared->adata->menu->tagged = 0;
   for (int i = 0; i < shared->adata->actx->idxlen; i++)
   {
     if (shared->adata->actx->idx[i]->body->tagged)
-      tagged_count++;
+      shared->adata->menu->tagged++;
   }
-  shared->adata->menu->tagged = tagged_count;
   update_menu(shared->adata->actx, shared->adata->menu, false);
   notify_send(shared->notify, NT_COMPOSE, NT_COMPOSE_ATTACH, NULL);
   index = menu_get_index(shared->adata->menu);
