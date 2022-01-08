@@ -2234,7 +2234,7 @@ char body_name(const struct Body *b)
   if (!b)
     return '!';
 
-  if (b->parts)
+  if (b->type == TYPE_MULTIPART)
     return '&';
 
   if (b->description)
