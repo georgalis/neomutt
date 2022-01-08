@@ -472,7 +472,7 @@ static int delete_attachment(struct AttachCtx *actx, int x)
 static void update_idx(struct Menu *menu, struct AttachCtx *actx, struct AttachPtr *ap)
 {
   ap->level = 0;
-  for (short i = actx->idxlen; i > 0; i--)
+  for (int i = actx->idxlen; i > 0; i--)
   {
     if (ap->level == actx->idx[i - 1]->level)
     {
@@ -495,7 +495,7 @@ static void update_idx(struct Menu *menu, struct AttachCtx *actx, struct AttachP
  * @param aidx Index position to insert attachment
  */
 static void insert_idx(struct Menu *menu, struct AttachCtx *actx,
-                       struct AttachPtr *ap, short aidx)
+                       struct AttachPtr *ap, int aidx)
 {
   /* set body pointers */
   if (aidx > 0)
@@ -506,7 +506,7 @@ static void insert_idx(struct Menu *menu, struct AttachCtx *actx,
     }
     else
     {
-      for (short i = aidx - 1; i >= 0; i--)
+      for (int i = aidx - 1; i >= 0; i--)
       {
         if (ap->level == actx->idx[i]->level)
         {
@@ -518,7 +518,7 @@ static void insert_idx(struct Menu *menu, struct AttachCtx *actx,
   }
   if (aidx < actx->idxlen)
   {
-    for (short i = aidx; i < actx->idxlen; i++)
+    for (int i = aidx; i < actx->idxlen; i++)
     {
       if (ap->level == actx->idx[i]->level)
       {
@@ -542,7 +542,7 @@ static void insert_idx(struct Menu *menu, struct AttachCtx *actx,
  * @param[in]  second Index of second attachment to swap
  */
 static int compose_reorder_body_pointers(struct Body *body, struct AttachCtx *actx,
-                                         short first, short second)
+                                         int first, int second)
 {
   struct AttachPtr **idx = actx->idx;
 
@@ -582,7 +582,7 @@ static int compose_reorder_body_pointers(struct Body *body, struct AttachCtx *ac
  * @param[in]  second Index of second attachment to swap
  */
 static void compose_attach_swap(struct Email *e, struct AttachCtx *actx,
-                                short first, short second)
+                                int first, int second)
 {
   struct AttachPtr **idx = actx->idx;
 
@@ -1529,7 +1529,7 @@ static int op_compose_ungroup_attachment(struct ComposeSharedData *shared, int o
     return IR_ERROR;
   }
 
-  short aidx = shared->adata->menu->current;
+  int aidx = shared->adata->menu->current;
   struct AttachCtx *actx = shared->adata->actx;
   struct Body *bptr = actx->idx[aidx]->body;
   struct Body *bptr_next = bptr->next;
@@ -1642,7 +1642,7 @@ static int op_compose_move_down(struct ComposeSharedData *shared, int op)
   }
 
   /* Find next attachment at current level */
-  short nextidx = index + 1;
+  int nextidx = index + 1;
   while ((nextidx < actx->idxlen) &&
          (actx->idx[nextidx]->level > actx->idx[index]->level))
   {
@@ -1655,7 +1655,7 @@ static int op_compose_move_down(struct ComposeSharedData *shared, int op)
   }
 
   /* Find final position */
-  short finalidx = index + 1;
+  int finalidx = index + 1;
   if (actx->idx[nextidx]->body->type == TYPE_MULTIPART)
   {
     int multipart_size = 1;
@@ -1693,7 +1693,7 @@ static int op_compose_move_up(struct ComposeSharedData *shared, int op)
     return IR_ERROR;
   }
   /* Find previous attachment at current level */
-  short previdx = index - 1;
+  int previdx = index - 1;
   while ((previdx > 0) && (shared->adata->actx->idx[previdx]->level >
                            shared->adata->actx->idx[index]->level))
   {

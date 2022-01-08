@@ -51,7 +51,7 @@ void mutt_actx_add_attach(struct AttachCtx *actx, struct AttachPtr *attach)
  * @param attach Attachment to insert
  * @param aidx   Index to insert attachment at
  */
-void mutt_actx_ins_attach(struct AttachCtx *actx, struct AttachPtr *attach, short aidx)
+void mutt_actx_ins_attach(struct AttachCtx *actx, struct AttachPtr *attach, int aidx)
 {
   if (!actx || !attach)
     return;
@@ -70,7 +70,7 @@ void mutt_actx_ins_attach(struct AttachCtx *actx, struct AttachPtr *attach, shor
 
   actx->idxlen++;
 
-  for (short i = actx->idxlen - 1; i > aidx; i--)
+  for (int i = actx->idxlen - 1; i > aidx; i--)
     actx->idx[i] = actx->idx[i - 1];
 
   actx->idx[aidx] = attach;
