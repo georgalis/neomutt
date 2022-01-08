@@ -515,6 +515,9 @@ main
 
   MuttLogger = log_disp_terminal;
 
+  //QWQ need to log this, so move it later
+  srand(time(NULL)); // set the random seed
+
   /* sanity check against stupid administrators */
   if (getegid() != getgid())
   {
