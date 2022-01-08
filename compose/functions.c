@@ -536,83 +536,69 @@ static void insert_idx(struct Menu *menu, struct AttachCtx *actx,
 }
 
 /**
- * compose_reorder_body_pointers - Reorder body pointers when swapping attachments
- * @param[in]  body   Attachment body
- * @param[out] actx   Attachment information
- * @param[in]  first  Index of first attachment to swap
- * @param[in]  second Index of second attachment to swap
+ * attach_swap - Swap two adjacent entries in the attachment list
+ * @param e      Email
+ * @param actx   Attachment information
+ * @param first  Index of first attachment to swap
+ * @param second Index of second attachment to swap
  */
-static int compose_reorder_body_pointers(struct Body *body, struct AttachCtx *actx,
-                                         int first, int second)
+static void attach_swap(struct Email *e, struct AttachCtx *actx,
+                        int first, int second)
 {
   struct AttachPtr **idx = actx->idx;
 
-  for (struct Body *b = body; b; b = b->next)
-  {
-    if (b->next == idx[first]->body)
-    {
-      /* attachments to be swapped are at top level */
-      idx[first]->body->next = idx[second]->body->next;
-      idx[second]->body->next = idx[first]->body;
-      b->next = idx[second]->body;
-      return 0;
-    }
-    if (b->type == TYPE_MULTIPART)
-    {
-      if (b->parts == idx[first]->body)
-      {
-        /* first attachment is at start of group */
-        idx[first]->body->next = idx[second]->body->next;
-        idx[second]->body->next = idx[first]->body;
-        b->parts = idx[second]->body;
-        return 0;
-      }
-      if (compose_reorder_body_pointers(b->parts, actx, first, second) == 0)
-        return 0;
-    }
-  }
-
-  return -1;
-}
-
-/**
- * compose_attach_swap - Swap two adjacent entries in the attachment list
- * @param[in]  e      Email
- * @param[out] actx   Attachment information
- * @param[in]  first  Index of first attachment to swap
- * @param[in]  second Index of second attachment to swap
- */
-static void compose_attach_swap(struct Email *e, struct AttachCtx *actx,
-                                int first, int second)
-{
-  struct AttachPtr **idx = actx->idx;
-
-  /* check that attachments really are adjacent */
+  // check that attachments really are adjacent
   if (idx[first]->body->next != idx[second]->body)
     return;
 
-  /* Reorder Body pointers.
-   * Must traverse email->body from top since Body has no previous ptr.  */
+  // Reorder Body pointers
   if (first == 0)
   {
-    /* first attachment is the fundamental part */
+    // first attachment is the fundamental part
     idx[first]->body->next = idx[second]->body->next;
     idx[second]->body->next = idx[first]->body;
     e->body = idx[second]->body;
   }
   else
   {
-    compose_reorder_body_pointers(e->body, actx, first, second);
+    // traverse through current level to find previous attachment
+    struct Body *bptr_parent = NULL;
+    struct Body *b = NULL;
+    if (find_body_parent(e->body, NULL, idx[first]->body, &bptr_parent))
+      b = bptr_parent->parts;
+    else
+      b = e->body;
+    if (b == idx[first]->body)
+    {
+      // first attachment is first attachment in group
+      idx[first]->body->next = idx[second]->body->next;
+      idx[second]->body->next = idx[first]->body;
+      bptr_parent->parts = idx[second]->body;
+    }
+    else
+    {
+      while (b)
+      {
+        if (b->next == idx[first]->body)
+        {
+          idx[first]->body->next = idx[second]->body->next;
+          idx[second]->body->next = idx[first]->body;
+          b->next = idx[second]->body;
+          break;
+        }
+        b = b->next;
+      }
+    }
   }
 
-  /* Reorder index and ptr->num */
-  struct AttachPtr *savedptr = idx[second];
+  // Reorder attachment list and ptr->num
+  struct AttachPtr *saved = idx[second];
   for (int i = second; i > first; i--)
   {
     idx[i] = idx[i - 1];
     idx[i]->num = i;
   }
-  idx[first] = savedptr;
+  idx[first] = saved;
   idx[first]->num = first;
 
   /* if moved attachment is a group then move subparts too */
@@ -621,14 +607,14 @@ static void compose_attach_swap(struct Email *e, struct AttachCtx *actx,
     int i = second + 1;
     while (idx[i]->level > idx[first]->level)
     {
-      savedptr = idx[i];
+      saved = idx[i];
       int destidx = i - second + first;
       for (int j = i; j > destidx; j--)
       {
         idx[j] = idx[j - 1];
         idx[j]->num = j;
       }
-      idx[destidx] = savedptr;
+      idx[destidx] = saved;
       idx[destidx]->num = destidx;
       i++;
       if (i >= actx->idxlen)
@@ -1656,7 +1642,7 @@ static int op_compose_move_down(struct ComposeSharedData *shared, int op)
     finalidx = index + multipart_size;
   }
 
-  compose_attach_swap(shared->email, shared->adata->actx, index, nextidx);
+  attach_swap(shared->email, shared->adata->actx, index, nextidx);
   mutt_update_tree(shared->adata->actx);
   menu_queue_redraw(shared->adata->menu, MENU_REDRAW_INDEX);
   menu_set_index(shared->adata->menu, finalidx);
@@ -1687,7 +1673,7 @@ static int op_compose_move_up(struct ComposeSharedData *shared, int op)
   {
     previdx--;
   }
-  compose_attach_swap(shared->email, shared->adata->actx, previdx, index);
+  attach_swap(shared->email, shared->adata->actx, previdx, index);
   mutt_update_tree(shared->adata->actx);
   menu_queue_redraw(shared->adata->menu, MENU_REDRAW_INDEX);
   menu_set_index(shared->adata->menu, previdx);
