@@ -166,7 +166,10 @@ static bool find_body_parent(struct Body *start, struct Body *start_parent,
     if (b == body)
     {
       *parent = start_parent;
-      return true;
+      if (start_parent)
+        return true;
+      else
+        return false;
     }
     if (b->parts)
     {
