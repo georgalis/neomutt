@@ -353,7 +353,7 @@ SecurityFlags mutt_parse_crypt_hdr(const char *p, bool set_empty_signas, Securit
 }
 
 /**
- * mutt_create_tmp_files_for_attachments - Create temporary files for all attachments
+ * create_tmp_files_for_attachments - Create temporary files for all attachments
  * @param fp_body           file containing the template
  * @param file              Allocated buffer for temporary file name
  * @param e_new             The new email template header
@@ -362,9 +362,9 @@ SecurityFlags mutt_parse_crypt_hdr(const char *p, bool set_empty_signas, Securit
  * @retval  0 Success
  * @retval -1 Error
  */
-int mutt_create_tmp_files_for_attachments(FILE *fp_body, struct Buffer *file,
-                                          struct Email *e_new, struct Body *body,
-                                          struct Envelope *protected_headers)
+static int create_tmp_files_for_attachments(FILE *fp_body, struct Buffer *file,
+                                            struct Email *e_new, struct Body *body,
+                                            struct Envelope *protected_headers)
 {
   struct Body *b = NULL;
   struct State s = { 0 };
@@ -376,8 +376,8 @@ int mutt_create_tmp_files_for_attachments(FILE *fp_body, struct Buffer *file,
   {
     if (b->type == TYPE_MULTIPART)
     {
-      if (mutt_create_tmp_files_for_attachments(fp_body, file, e_new, b->parts,
-                                                protected_headers) < 0)
+      if (create_tmp_files_for_attachments(fp_body, file, e_new, b->parts,
+                                           protected_headers) < 0)
       {
         return -1;
       }
@@ -604,8 +604,8 @@ int mutt_prepare_template(FILE *fp, struct Mailbox *m, struct Email *e_new,
   file = mutt_buffer_pool_get();
 
   /* create temporary files for all attachments */
-  if (mutt_create_tmp_files_for_attachments(fp_body, file, e_new, e_new->body,
-                                            protected_headers) < 0)
+  if (create_tmp_files_for_attachments(fp_body, file, e_new, e_new->body,
+                                       protected_headers) < 0)
   {
     goto bail;
   }
