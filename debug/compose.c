@@ -126,6 +126,9 @@ void delete_random_attachment(struct Buffer *actions, struct AttachCtx *actx)
 
 void automate(struct AttachCtx *actx, int *action_num)
 {
+  static int runs = 0;
+  // mutt_debug(LL_DEBUG1, "ACTION: runs=%d, action_num=%d\n", runs, *action_num);
+
   if (!actx)
     return;
   struct Buffer *actions = NULL;
@@ -138,19 +141,35 @@ void automate(struct AttachCtx *actx, int *action_num)
 
   (*action_num)++;
 
+  actions = mutt_buffer_pool_get();
+
   if (*action_num > 100)
   {
-    // push_actions("<exit><exit>");
+    runs++;
+    mutt_debug(LL_DEBUG1, "ACTION: runs=%d, action_num=%d\n", runs, *action_num);
+    if (runs > 1000)
+    {
+      // Quit NeoMutt
+      mutt_buffer_addstr(actions, "<exit><exit>");
+    }
+    else
+    {
+      // Restart Compose
+      // mutt_buffer_add_printf(actions, "<exit><mail>john.doe@example.com<enter>test %d<enter>", runs);
+      mutt_buffer_add_printf(actions, "<exit><F1>", runs);
+    }
     goto done;
   }
-
-  actions = mutt_buffer_pool_get();
 
   if (*action_num == 1)
   {
     const int num = (rand() % 35) + 6;
     for (int i = 0; i < num; i++)
+    {
       add_random_file(actions);
+      push_actions(actions);
+      mutt_buffer_reset(actions);
+    }
     goto done;
   }
 
