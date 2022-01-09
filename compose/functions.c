@@ -389,10 +389,20 @@ static int delete_attachment(struct AttachCtx *actx, int aidx)
   struct Body *bptr_parent = NULL;
   int part_count = 1;
 
-  if ((aidx == 0) && (actx->idxlen == 1))
+  if (aidx == 0)
   {
-    mutt_error(_("You may not delete the only attachment"));
-    return -1;
+    if (actx->idxlen == 1)
+    {
+      mutt_error(_("You may not delete the only attachment"));
+      return -1;
+    }
+
+    struct Body *b = actx->idx[0]->body;
+    if (!b->next) // There's only one grouped attachment left
+    {
+      mutt_error(_("You may not delete the only attachment"));
+      return -1;
+    }
   }
 
   if (idx[aidx]->level > 0)
